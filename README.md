@@ -2,7 +2,7 @@
 
 **Web Tabanlı Oyun Geliştirme Projesi**
 
-🎮 **[Oyunu Oyna](https://ssuudec.github.io/magaradan-kacis-game/)**
+🎮 **[Oyunu Oyna](https://ssuudec.itch.io/magaradan-kacis)**
 
 ---
 
