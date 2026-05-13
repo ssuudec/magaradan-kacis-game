@@ -42,9 +42,9 @@ Tüm detaylar: [AI.md](AI.md)
 | Mağara arka plan | [Admurin - Parallax Backgrounds: Caves](https://admurin.itch.io/parallax-backgrounds-caves) |
 | Kapı | [karsiori - Door Pack ](https://karsiori.itch.io/pixel-art-door-pack-animated) |
 | Yarasa | [PixelSkeys - Bat Pixel Art Pack Free](https://opengameart.org/content/bat-sprite) |
-| Sesler | [Freesound](https://pixabay.com/tr/)  |
 | Diken | [Omniclause - Spikes](https://omniclause.itch.io/spikes)|
 | Platform | [Cat_Sopelka - Dungeon brick wall background](https://cat-sopelka.itch.io/dungeon-brick-wall) |
+| Sesler | [Freesound](https://pixabay.com/tr/)  |
 | Buton | Kendi çizimim |
 | Hint | Gemini AI |
 
