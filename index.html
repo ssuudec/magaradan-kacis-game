@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Mağaradan Kaçış</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #0d0a1c;
+            color: #e8dcc4;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #gameWrapper {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: calc(100vh * 1.5);
+            max-height: calc(100vw / 1.5);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: none;
+            box-shadow: none;
+            cursor: crosshair;
+        }
+
+        h1 {
+            position: absolute;
+            top: 6%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin: 0;
+            color: #d32f2f;
+            /* Kırmızımsı bir hava vermesi için */
+            text-shadow: 2px 2px 0 #000;
+            /* Yazının daha net okunması için gölge eklendi */
+            font-family: 'Press Start 2P', 'Courier New', Courier, monospace;
+            text-transform: uppercase;
+            font-size: clamp(12px, 2vw, 18px);
+            /* Font geniş olduğu için boyutu küçük tutuldu */
+            z-index: 10;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 2%;
+            left: 2%;
+            margin: 0;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: clamp(10px, 1.5vw, 12px);
+            z-index: 10;
+            pointer-events: none;
+            user-select: none;
+        }
+
+
+        /* İPUCU PENCERESİ AYARLARI */
+        #hintOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            color: #fff;
+            backdrop-filter: blur(2px);
+        }
+
+        #closeHintBtn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 30px;
+            height: 30px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        #closeHintBtn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        #hintTextOverlay {
+            font-size: clamp(10px, 1.5vw, 14px);
+            font-family: 'Press Start 2P', monospace;
+            font-weight: normal;
+            text-align: center;
+            max-width: 80%;
+            line-height: 1.8;
+            color: #e8dcc4;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="gameWrapper">
+        <canvas id="gameCanvas" width="480" height="320"></canvas>
+
+        <h1 id="levelName">Level 1</h1>
+
+        <div
+            style="position: absolute; top: 4%; right: 4%; display: flex; align-items: center; gap: 15px; z-index: 10;">
+            <img src="assets/objects/qmark.png" id="hintBtn" title="İpucu"
+                style="height: clamp(28px, 4.5vw, 36px); width: auto; cursor: pointer; image-rendering: pixelated;">
+            <div id="settingsBtn" title="Ses Ayarları"
+                style="font-size: clamp(28px, 4.5vw, 36px); line-height: 1; cursor: pointer; color: #e8dcc4; user-select: none; display: flex; align-items: center; justify-content: center;">
+                ⚙️</div>
+        </div>
+
+        <!-- İpucu ekranı burası -->
+        <div id="hintOverlay">
+            <div id="closeHintBtn" title="Kapat">&lt;</div>
+            <div id="hintTextOverlay"></div>
+        </div>
+
+        <!-- Ses ayarlarının yapıldığı ekran -->
+        <div id="settingsOverlay"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(13, 10, 28, 0.95); z-index: 20; display: none; flex-direction: column; justify-content: center; align-items: center;">
+            <div id="closeSettingsBtn" title="Kapat"
+                style="position: absolute; top: 5%; right: 5%; font-size: 24px; color: #fff; cursor: pointer; font-family: 'Press Start 2P', monospace; user-select: none;">
+                X</div>
+            <h2
+                style="color: #d32f2f; font-family: 'Press Start 2P', monospace; margin-bottom: 30px; font-size: clamp(16px, 2.5vw, 24px); text-shadow: 2px 2px 0 #000; text-transform: uppercase;">
+                Ses Ayarları</h2>
+            <div
+                style="display: flex; flex-direction: column; gap: 20px; width: 60%; max-width: 300px; pointer-events: auto;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; color: #e8dcc4; font-size: 16px; font-family: 'Courier New', Courier, monospace; font-weight: bold;">
+                    <label>Müzik</label>
+                    <input type="range" class="bgmSync" min="0" max="1" step="0.01" value="0.5"
+                        style="width: 70%; cursor: pointer; accent-color: #d32f2f;">
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; color: #e8dcc4; font-size: 16px; font-family: 'Courier New', Courier, monospace; font-weight: bold;">
+                    <label>Efekt</label>
+                    <input type="range" class="sfxSync" min="0" max="1" step="0.01" value="1.0"
+                        style="width: 70%; cursor: pointer; accent-color: #d32f2f;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Oyun bitince karşımıza çıkan ekran -->
+        <div id="gameOverOverlay"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(13, 10, 28, 0.95); z-index: 20; display: none; flex-direction: column; justify-content: center; align-items: center;">
+            <h1
+                style="position: relative; top: 0; left: 0; transform: none; font-size: clamp(20px, 4vw, 32px); text-align: center; margin-bottom: 20px; pointer-events: auto; text-shadow: 4px 4px 0 #000; color: #d32f2f;">
+                KAÇIŞ BAŞARILI</h1>
+            <p
+                style="color: #e8dcc4; font-size: clamp(10px, 1.5vw, 14px); font-family: 'Press Start 2P', monospace; margin-bottom: 40px; text-align: center; line-height: 1.8;">
+                Tebrikler!<br>Zorlukları aştın ve odadan kurtuldun</p>
+            <button id="playAgainBtn"
+                style="font-family: 'Press Start 2P', monospace; background: #8a0010; color: #fff; border: 4px solid #5a0008; padding: 15px 30px; font-size: clamp(12px, 1.8vw, 16px); cursor: pointer; text-transform: uppercase;">Tekrar
+                Oyna</button>
+        </div>
+
+        <!-- Ana menü ekranı -->
+        <div id="startMenuOverlay"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(13, 10, 28, 0.95); z-index: 20; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <h1
+                style="position: relative; top: 0; left: 0; transform: none; font-size: clamp(20px, 4vw, 32px); text-align: center; margin-bottom: 40px; pointer-events: auto; text-shadow: 4px 4px 0 #000; color: #d32f2f;">
+                Mağaradan Kaçış</h1>
+            <button id="startGameBtn"
+                style="font-family: 'Press Start 2P', monospace; background: #8a0010; color: #fff; border: 4px solid #5a0008; padding: 15px 30px; font-size: clamp(14px, 2vw, 20px); cursor: pointer; text-transform: uppercase;">Oyuna
+                Başla</button>
+
+            <div
+                style="margin-top: 40px; display: flex; flex-direction: column; gap: 15px; width: 60%; max-width: 300px; pointer-events: auto;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; color: #e8dcc4; font-size: 14px; font-family: 'Courier New', Courier, monospace; font-weight: bold;">
+                    <label>Müzik</label>
+                    <input type="range" class="bgmSync" min="0" max="1" step="0.01" value="0.5"
+                        style="width: 70%; cursor: pointer; accent-color: #d32f2f;">
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; color: #e8dcc4; font-size: 14px; font-family: 'Courier New', Courier, monospace; font-weight: bold;">
+                    <label>Efekt</label>
+                    <input type="range" class="sfxSync" min="0" max="1" step="0.01" value="1.0"
+                        style="width: 70%; cursor: pointer; accent-color: #d32f2f;">
+                </div>
+            </div>
+        </div>
+
+
+        <p class="controls">
+            [WASD / Ok Tuşları] Hareket &nbsp;·&nbsp; [SPACE / W] Zıpla &nbsp;·&nbsp; [R] Sıfırla
+        </p>
+    </div>
+
+    <script>
+        // Oyunun ana kodları buradan başlıyor.
+        // Referans aldığım oyun: "That Tiny Recursive Room" — Preet Sra (itch.io)
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const CW = 480, CH = 320;
+
+        // Ses ve müzik dosyalarını burada tanımlıyoruz
+        const bgMusic = new Audio('assets/bg.mp3');
+        bgMusic.loop = true;
+        // Bazı tarayıcılarda döngü (loop) düzgün çalışmıyor, o yüzden bittiğinde baştan başlatıyorum.
+        bgMusic.addEventListener('ended', function () {
+            this.currentTime = 0;
+            this.play().catch(() => { });
+        }, false);
+        bgMusic.volume = 0.5;
+
+        const clickSound = new Audio('assets/click.mp3');
+        function playClick() {
+            clickSound.currentTime = 0;
+            clickSound.play().catch(() => { });
+        }
+
+        const dieSound = new Audio('assets/die.mp3');
+        function playDie() {
+            dieSound.currentTime = 0;
+            dieSound.play().catch(() => { });
+        }
+
+        const jumpSound = new Audio('assets/jump.mp3');
+        function playJump() {
+            jumpSound.currentTime = 0;
+            jumpSound.play().catch(() => { });
+        }
+
+        const levelUpSound = new Audio('assets/levelup.mp3');
+        function playLevelUp() {
+            levelUpSound.currentTime = 0;
+            levelUpSound.play().catch(() => { });
+        }
+
+        let gameStarted = false;
+        let isSettingsScreen = false;
+
+        document.querySelectorAll('.bgmSync').forEach(slider => {
+            slider.addEventListener('input', e => {
+                const vol = e.target.value;
+                bgMusic.volume = vol;
+                document.querySelectorAll('.bgmSync').forEach(s => s.value = vol);
+            });
+        });
+
+        document.querySelectorAll('.sfxSync').forEach(slider => {
+            slider.addEventListener('input', e => {
+                const vol = e.target.value;
+                clickSound.volume = vol;
+                dieSound.volume = vol;
+                jumpSound.volume = vol;
+                levelUpSound.volume = vol;
+                document.querySelectorAll('.sfxSync').forEach(s => s.value = vol);
+            });
+        });
+
+        document.getElementById('startGameBtn').addEventListener('click', () => {
+            playClick();
+            document.getElementById('startMenuOverlay').style.display = 'none';
+            bgMusic.play().catch(() => { });
+            gameStarted = true;
+        });
+
+        document.getElementById('playAgainBtn').addEventListener('click', () => {
+            playClick();
+            document.getElementById('gameOverOverlay').style.display = 'none';
+            loadLevel(0);
+        });
+
+        // Oyunun görsellerini yüklüyoruz
+        const IMG = {};
+        [
+            // Tekil arka plan
+            ['bg', 'assets/bg/background.png'],
+            // Karakter animasyonları
+            ['idle', 'assets/player/idle.png'],
+            ['walk', 'assets/player/walk.png'],
+            ['jump', 'assets/player/jump.png'],
+            ['death', 'assets/player/death.png'],
+            // Objeler
+            ['door', 'assets/objects/door.png'],
+            ['spike', 'assets/objects/spikes.png'],
+            ['btnUp', 'assets/objects/button_up.png'],
+            ['btnDown', 'assets/objects/button_down.png'],
+            ['qmark', 'assets/objects/qmark.png'],
+            ['platform', 'assets/objects/platform.png'],
+        ].forEach(([k, src]) => {
+            const i = new Image();
+            if (k === 'qmark') {
+                i.onload = () => {
+                    const tc = document.createElement('canvas');
+                    tc.width = i.width || 28; tc.height = i.height || 28;
+                    const tcx = tc.getContext('2d');
+                    tcx.drawImage(i, 0, 0);
+                    const imgData = tcx.getImageData(0, 0, tc.width, tc.height);
+                    for (let j = 0; j < imgData.data.length; j += 4) {
+                        if (imgData.data[j] > 240 && imgData.data[j + 1] > 240 && imgData.data[j + 2] > 240) {
+                            imgData.data[j + 3] = 0;
+                        }
+                    }
+                    tcx.putImageData(imgData, 0, 0);
+                    document.getElementById('hintBtn').src = tc.toDataURL();
+                };
+            }
+            i.src = src;
+            IMG[k] = i;
+        });
+
+        // Parallax kaydırma ofseti
+        let parallaxOffset = 0;
+
+        // Yarasa Animasyon Kareleri (bat1.png, bat2.png, bat3.png, bat4.png)
+        const BAT_IMG = [];
+        for (let i = 1; i <= 4; i++) {
+            const img = new Image();
+            img.src = `assets/objects/bat${i}.png`;
+            BAT_IMG.push(img);
+        }
+
+        // Karakterin animasyonlarını burada yönetiyorum
+        // Resim dosyası yan yana karelerden oluştuğu için
+        // srcX = frame * frameW yaparak doğru kareyi seçmek için.
+        const ANIM = {
+            state: 'idle',
+            frame: 0,
+            tick: 0,
+            facing: 1,   // Karakterin baktığı yön (1 sağ, -1 sol)
+
+            // Karakterin her hareketindeki kare genişliğinin 64px olması için
+            cfg: {
+                idle: { sheet: 'idle', frames: 4, fps: 8, frameW: 64 },
+                walk: { sheet: 'walk', frames: 4, fps: 12, frameW: 64 },
+                jump: { sheet: 'jump', frames: 6, fps: 10, frameW: 64 },
+                death: { sheet: 'death', frames: 5, fps: 10, frameW: 64 },
+            },
+
+            FRAME_H: 64,   // Tüm resimlerde kare yüksekliğinin 64px olması için
+
+            // Oyunda gösterilecek boyut ve position offset
+            DISP_W: 78,
+            DISP_H: 78,
+            OFF_X: -28,
+            OFF_Y: -36
+        };
+
+        // Karakterin ölüp ölmediğiyle ilgili değişkenler
+        let isDying = false;  // Ölüm animasyonu çalışıyor mu?
+        let deathLevel = 0;      // Ölünce hangi bölümden başlayacak
+
+        // Karakter ölünce bu fonksiyonun çağrılması için
+        function startDeath() {
+            if (isDying) return;   // Zaten ölüyor
+            playDie();
+            isDying = true;
+            deathLevel = level; // Ölünce hangi bölümden başlayacağını unutmamak için kaydediyoruz
+            ANIM.state = 'death';
+            ANIM.frame = 0;
+            ANIM.tick = 0;
+            dragDoor = false;
+            dragPlayer = false;
+            dragPlatIdx = -1;
+        }
+
+        // Oyuncunun hareketine göre doğru animasyonun seçilmesi için
+        function updateAnim() {
+            if (isDying) {
+                // Ölüm animasyonu: tamamlanınca leveli sıfırla
+                const cfg = ANIM.cfg.death;
+                if (++ANIM.tick >= Math.round(60 / cfg.fps)) {
+                    ANIM.tick = 0;
+                    if (++ANIM.frame >= cfg.frames) {
+                        isDying = false;
+                        loadLevel(deathLevel);
+                    }
+                }
+                return;
+            }
+
+            // Yön güncelleme
+            if (player.vx > 0.3) ANIM.facing = 1; // Sağa gidilirken yönün 1 olması için
+            if (player.vx < -0.3) ANIM.facing = -1; // Sola gidilirken yönün -1 olması için
+
+            // Havadayken zıplama animasyonunun kalması ve titreme yapmaması için
+            const next = !player.grounded ? 'jump'
+                : Math.abs(player.vx) > 0.3 ? 'walk'
+                    : 'idle';
+
+            if (next !== ANIM.state) { ANIM.state = next; ANIM.frame = 0; ANIM.tick = 0; }
+
+            const fps = ANIM.cfg[ANIM.state].fps;
+            if (++ANIM.tick >= Math.round(60 / fps)) {
+                ANIM.tick = 0;
+                ANIM.frame = (ANIM.frame + 1) % ANIM.cfg[ANIM.state].frames;
+            }
+        }
+
+        // Oyunun zeminlerini ve duvarlarını kurmak için
+
+        // Basılacak yerler (platformlar)
+        const PLATFORMS = [
+    /* 0 */ { x: 0, y: 285, w: 105, h: 35 }, // Sol zemin
+    /* 1 */ { x: 375, y: 285, w: 105, h: 35 }, // Sağ zemin
+    /* 2 */ { x: 118, y: 248, w: 52, h: 10 }, // Sol atlama taşı
+    /* 3 */ { x: 310, y: 248, w: 52, h: 10 }, // Sağ atlama taşı
+    /* 4 */ { x: 8, y: 190, w: 82, h: 12 }, // Sol orta
+    /* 5 */ { x: 390, y: 190, w: 82, h: 12 }, // Sağ orta
+    /* 6 */ { x: 188, y: 163, w: 104, h: 12 }, // Merkez (Level 8'de sürüklenebilir)
+    /* 7 */ { x: 120, y: 108, w: 78, h: 12 }, // Sol üst (Level 8'de gizlenir)
+    /* 8 */ { x: 282, y: 108, w: 78, h: 12 }, // Sağ üst (Level 8'de gizlenir)
+    /* 9 */ { x: 162, y: 52, w: 156, h: 12 }, // Zirve
+        ];
+
+        // Yerlerin orijinal konumları (seviye değişince eski haline dönmesi için)
+        const PLAT_ORIG_Y = PLATFORMS.map(p => p.y); // Platformların ilk yerlerini bir yerde tutalım ki sıfırlayınca lazım olsun
+
+        // 8. bölümde saklayacağımız yerlerin listesi
+        const L8_HIDDEN = [7, 8]; // 8. bölümde bu platformları gizliyorum
+
+        // Farenle tutup çekebildiğin orta platform (8. bölüm için)
+        const MOV_IDX = 6;
+        const MOV_ORIGIN = { x: 188, y: 163 };
+
+        // Dikenler
+        const SPIKES = [
+            { x: 105, y: 278, w: 270, h: 7, up: true }, // Alt gap
+            { x: 70, y: 0, w: 48, h: 7, up: false }, // Sol tavan
+            { x: 362, y: 0, w: 48, h: 7, up: false }, // Sağ tavan
+            { x: 74, y: 182, w: 16, h: 7, up: true }, // Sol orta sağ kenar
+            { x: 390, y: 182, w: 16, h: 7, up: true }, // Sağ orta sol kenar
+            { x: 162, y: 240, w: 8, h: 7, up: true }, // Sol atlama sağ kenar
+            { x: 310, y: 240, w: 8, h: 7, up: true }, // Sağ atlama sol kenar
+        ];
+
+        // Buton konumları (fiziksel ve görsel sınırlar eşlendi: 34x22 piksel)
+        const BTN = { x: 223, y: 143, w: 34, h: 22 }; // Merkez platform
+        const BTN_ZIRVE = { x: 223, y: 32, w: 34, h: 22 }; // Zirve (Level 8)
+
+        const ENTRANCE = { x: 8, y: 235, w: 30, h: 50 };
+        const DOOR_RESET = { x: 442, y: 235, w: 30, h: 50 };
+        const START = { x: 20, y: 258 };
+
+        // 10. Bölümde buton tıkladıkça kaçıyor, o yerlerin listesi bu
+        const BTN_SEQ = [
+            BTN,
+            { x: 142, y: 88, w: 34, h: 22 }, // Sol üst
+            { x: 304, y: 88, w: 34, h: 22 }, // Sağ üst
+            { x: 223, y: 32, w: 34, h: 22 }, // Zirve
+        ];
+
+        // O an hangi buton aktifse onu bulmaya yarayan fonksiyon
+        function activeBtn() {
+            if (level >= LEVELS.length) return BTN;
+            const m = LEVELS[level].mod;
+            if (m.mouseBtn) return BTN_SEQ[Math.min(btnClickCount, 3)];
+            if (m.highBtn) return BTN_ZIRVE;
+            return BTN;
+        }
+
+        // Karakterin hızı, zıplama gücü ve yerçekimi ayarları
+        const SPD = 2.4;
+        const JUMP = 8.8;
+        const GRAV = 0.38;
+        const MAXFALL = 10;
+        const WIND_F = -0.8;  // Rüzgarın şiddeti (eksi olduğu için sola doğru eser)
+
+        // BÖLÜM TASARIMLARI (İsimler, ipuçları ve kurallar)
+        const LEVELS = [
+            { name: "Bölüm 1: Gelenek", hint: "Bazen en basit yol, doğrudan butona basıp çıkışa gitmektir.", mod: {} },
+            { name: "Bölüm 2: Direniş", hint: "Görünmez bir güç seni geri çekiyor. Asla durma ve rüzgara karşı koş.", mod: { wind: true } },
+            { name: "Bölüm 3: Kısa Devre", hint: "Zihninle parmakların savaşıyor! Sola gitmek için 'Yukarı', sağa gitmek için 'Sol', zıplamak için ise 'Sağ' tuşuna bas.", mod: { reverseCtrl: true } },
+            { name: "Bölüm 4: İhanet", hint: "Sana her zaman yardım eden şeyler, bazen çıkışı kapatabilir. Butona DOKUNMADAN kapıya git.", mod: { doNothing: true } },
+            { name: "Bölüm 5: Kökler", hint: "İleri gitmek her zaman çıkışa ulaştırmaz. Geldiğin yere, yani başlangıç kapısına geri dön.", mod: { reverseExit: true } },
+            { name: "Bölüm 6: Aldatmaca", hint: "Gördüğün kapı aslında bir tuzak! Gerçek kapı artık aşağıdaki sivri dikenlerin arasında gizli.", mod: { fakeDoor: true } },
+            { name: "Bölüm 7: Kukla", hint: "Bedenini hareket ettiren tuşlar değil. Faren ile karakteri tutup doğrudan çıkışa sürükle.", mod: { dragPlayer: true } },
+            { name: "Bölüm 8: Mimar", hint: "Zıplama hakkın kısıtlı! Ortadaki platformu farenle hareket ettirerek kendine merdiven inşa et.", mod: { maxJumps: 2, dragPlatform: true, highBtn: true } },
+            { name: "Bölüm 9: Israr", hint: "Kapalı kapılar sadece izlemekle açılmaz. Uzaktan hızlanarak kapıya üst üste birkaç kez çarp.", mod: { knockDoor: true } },
+            { name: "Bölüm 10: Av", hint: "Buton fare imlecinden korkup kaçıyor! Fare ile onu tıklayarak yakala.", mod: { mouseBtn: true } },
+        ];
+
+        // Karakterin genel özellikleri
+        const player = { x: 0, y: 0, vx: 0, vy: 0, w: 14, h: 20, grounded: false, jumpLock: false }; // Karakterimizin başlangıç ayarları
+
+        // Oyunun genel gidişatını tutan değişkenler
+        let level = 0;
+        let btnOn = false;
+        let doorX = 0, doorY = 0;
+        let doorKnocks = 0;
+        let knockTimer = 0;
+        let knocksRequired = 3;
+        let jumpsLeft = 999;
+        let btnClickCount = 0;
+        let gameWon = false;
+        let hintRevealed = false;
+        let isHintScreen = false;
+
+        // Arka planda uçuşan yarasalar için bu listeyi oluşturdum
+        const bgBats = [
+            { x: -50, baseY: 40, vx: 0.8, frame: 0, tick: 0, dir: 1, scale: 16, speedMod: 1 },
+            { x: 560, baseY: 90, vx: -0.6, frame: 1, tick: 3, dir: -1, scale: 14, speedMod: 0.8 },
+            { x: -120, baseY: 60, vx: 0.9, frame: 2, tick: 5, dir: 1, scale: 18, speedMod: 1.2 }
+        ];
+
+        // Mouse
+        let mx = 0, my = 0;
+        let dragDoor = false;
+        let dragPlayer = false;
+        let dragPlatIdx = -1;
+        let dragOffX = 0, dragOffY = 0;
+
+        // Klavye
+        const keys = {}; // Hangi tuşlara basıldığını burada saklıyorum
+
+        // Arayüz elemanlarını seçmek için
+        const $name = document.getElementById('levelName');
+        const $hintBtn = document.getElementById('hintBtn');
+        const $hintOverlay = document.getElementById('hintOverlay');
+        const $closeHintBtn = document.getElementById('closeHintBtn');
+        const $hintTextOverlay = document.getElementById('hintTextOverlay');
+        const $settingsBtn = document.getElementById('settingsBtn');
+        const $settingsOverlay = document.getElementById('settingsOverlay');
+        const $closeSettingsBtn = document.getElementById('closeSettingsBtn');
+
+        $settingsBtn.addEventListener('click', () => {
+            if (gameWon || !gameStarted) return;
+            playClick();
+            isSettingsScreen = true;
+            $settingsOverlay.style.display = 'flex';
+        });
+
+        $closeSettingsBtn.addEventListener('click', () => {
+            playClick();
+            isSettingsScreen = false;
+            $settingsOverlay.style.display = 'none';
+        });
+
+        $hintBtn.addEventListener('click', () => {
+            if (gameWon || !gameStarted) return;
+            playClick();
+            hintRevealed = true;
+            isHintScreen = true;
+            $hintTextOverlay.textContent = 'İPUCU: ' + LEVELS[level].hint;
+            $hintOverlay.style.display = 'flex';
+        });
+
+        $closeHintBtn.addEventListener('click', () => {
+            playClick();
+            isHintScreen = false;
+            $hintOverlay.style.display = 'none';
+        });
+
+        // Bazı hesaplamaların yapılması için kullanılan yardımcı kodlar
+
+        // Karakterin bir yere çarpıp çarpmadığını kontrol ediyoruz (AABB)
+        function collide(a, b) {
+            return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+        }
+
+        // Bir noktanın dikdörtgen içinde olup olmadığını kontrol eder (Fare tıklamaları için)
+        function ptIn(px, py, r) {
+            return px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
+        }
+
+        // Kapının o an nerede olduğunu veren yardımcı fonksiyon
+        const _door = { x: 0, y: 0, w: DOOR_RESET.w, h: DOOR_RESET.h };
+        function getDoor() { _door.x = doorX; _door.y = doorY; return _door; }
+
+        // Bölüm kurallarına göre kapının açılıp açılmadığına karar veriyoruz
+        function isDoorOpen() {
+            const m = LEVELS[level].mod;
+            if (m.doNothing) return !btnOn;
+            if (m.reverseExit) return false;           // L5: sağ kapı hiç açılmaz
+            if (m.fakeDoor) return false;
+            if (m.knockDoor) return doorKnocks >= knocksRequired;
+            return btnOn;
+        }
+
+        function updateHUD() { /* Kapı durumu göstergesi kaldırıldı */ }
+
+        // Seviye başladığında her şeyin hazır olması için gereken ana yer
+        function loadLevel(idx) {
+            if (idx >= LEVELS.length) {
+                gameWon = true;
+                $name.textContent = '';
+                document.getElementById('gameOverOverlay').style.display = 'flex';
+                return;
+            }
+
+            level = idx;
+            gameWon = false;
+
+            // Karakterin başlangıç noktasına geri dönmesi için
+            player.x = START.x; player.y = START.y;
+            player.vx = 0; player.vy = 0;
+            player.grounded = false; player.jumpLock = false;
+
+            // Uçan yarasaların eski yerlerine dönmesi için
+            bgBats[0].x = -50;
+            bgBats[1].x = 560;
+            bgBats[2].x = -120;
+
+            // Kapının normal yerine çekilmesi için
+            doorX = DOOR_RESET.x; doorY = DOOR_RESET.y;
+
+            // Diğer tüm değişkenlerin baştan başlaması için
+            btnOn = false; doorKnocks = 0; knockTimer = 0;
+            jumpsLeft = LEVELS[idx].mod.maxJumps ?? 999;
+            knocksRequired = Math.floor(Math.random() * 4) + 2;
+            btnClickCount = 0;
+            dragDoor = false; dragPlayer = false; dragPlatIdx = -1;
+
+            // Tüm platformları orijinal Y konumlarına döndür
+            PLATFORMS.forEach((p, i) => { p.y = PLAT_ORIG_Y[i]; });
+
+            // Level 8: sol üst + sağ üst platformları ekran dışına al
+            if (LEVELS[idx].mod.dragPlatform) {
+                L8_HIDDEN.forEach(i => { PLATFORMS[i].y = -300; });
+            }
+
+            // Sürüklenebilir platformu başlangıç konumuna döndür
+            PLATFORMS[MOV_IDX].x = MOV_ORIGIN.x;
+            PLATFORMS[MOV_IDX].y = MOV_ORIGIN.y;
+
+            // İpucu kutusu kapansın
+            hintRevealed = false;
+            isHintScreen = false;
+            $hintOverlay.style.display = 'none';
+            $hintBtn.style.opacity = '1.0';
+
+            // UI güncelle
+            $name.textContent = LEVELS[idx].name;
+            updateHUD();
+        }
+
+        function nextLevel() {
+            playLevelUp();
+            loadLevel(level + 1);
+        }
+
+        // Tuşlara basılınca ne olacağını yakalamak için
+        window.addEventListener('keydown', e => {
+            if (!gameStarted) return;
+            const k = e.key.toLowerCase();
+            if (['a', 'd', 'w', 's', ' ', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(k))
+                e.preventDefault();
+            keys[k] = true;
+            if (k === 'r') {
+                playClick();
+                if (gameWon) document.getElementById('gameOverOverlay').style.display = 'none';
+                loadLevel(gameWon ? 0 : level);
+            }
+        });
+        window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+        // Fare ile olan etkileşimleri (sürükleme, tıklama) yönetmek için
+        function getMP(e) {
+            const r = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / r.width;
+            const scaleY = canvas.height / r.height;
+            mx = (e.clientX - r.left) * scaleX;
+            my = (e.clientY - r.top) * scaleY;
+        }
+
+        canvas.addEventListener('mousemove', e => {
+            getMP(e);
+
+            // 5. Bölümdeki kapıyı sürükleme olayı
+            if (dragDoor) {
+                doorX = mx - DOOR_RESET.w / 2;
+                doorY = my - DOOR_RESET.h / 2;
+            }
+
+            // 7. Bölümdeki karakteri fareyle taşıma olayı
+            if (dragPlayer) {
+                player.x = mx - player.w / 2;
+                player.y = my - player.h / 2;
+                player.vx = 0; player.vy = 0;
+            }
+
+            // 8. Bölümdeki platformu kaydırma olayı (duvarlardan geçemez)
+            if (dragPlatIdx >= 0) {
+                const p = PLATFORMS[dragPlatIdx];
+                const oldX = p.x, oldY = p.y;
+
+                // İstenen yeni konum (ekran sınırları içinde)
+                const wantX = Math.max(0, Math.min(CW - p.w, mx - dragOffX));
+                const wantY = Math.max(15, Math.min(CH - p.h - 10, my - dragOffY));
+
+                // X ve Y eksenlerini ayrı ayrı test et — sliding davranışı için
+                // X hareketi test et
+                p.x = wantX; p.y = oldY;
+                let hitX = false;
+                for (let i = 0; i < PLATFORMS.length; i++) {
+                    if (i === dragPlatIdx || PLATFORMS[i].y < 0) continue;
+                    if (collide(p, PLATFORMS[i])) { hitX = true; break; }
+                }
+                if (hitX) p.x = oldX; // X'te çakışma → X'i geri al
+
+                // Y hareketi test et
+                p.y = wantY;
+                let hitY = false;
+                for (let i = 0; i < PLATFORMS.length; i++) {
+                    if (i === dragPlatIdx || PLATFORMS[i].y < 0) continue;
+                    if (collide(p, PLATFORMS[i])) { hitY = true; break; }
+                }
+                if (hitY) p.y = oldY; // Y'de çakışma → Y'yi geri al
+
+                // Platformu çekerken eğer üstündeysek karakterimiz de beraber gitsin
+                const dx = p.x - oldX, dy = p.y - oldY;
+                if (dx !== 0 || dy !== 0) {
+                    const onPlat = player.y + player.h >= oldY - 3
+                        && player.y + player.h <= oldY + 5
+                        && player.x + player.w > oldX
+                        && player.x < oldX + p.w;
+                    if (onPlat) {
+                        player.x = Math.max(0, Math.min(CW - player.w, player.x + dx));
+                        player.y += dy;
+                    }
+                }
+            }
+        });
+
+        canvas.addEventListener('mousedown', e => {
+            getMP(e);
+            if (gameWon) return;
+            const m = LEVELS[level].mod;
+
+            if (m.telekinesis && ptIn(mx, my, getDoor())) dragDoor = true;
+            if (m.dragPlayer && ptIn(mx, my, player)) dragPlayer = true;
+
+            // 10. Bölümde buton fareyle tıklanınca kaçıyor (yakınsak çalışır)
+            if (m.mouseBtn && ptIn(mx, my, activeBtn()) && btnClickCount < 3 && gameStarted) {
+                const ab = activeBtn();
+                // Oyuncunun buton merkezine olan mesafesi — çok uzaktan tıklama çalışmaz
+                const close = Math.abs(player.x + player.w / 2 - (ab.x + ab.w / 2)) < 55
+                    && Math.abs(player.y + player.h / 2 - (ab.y + ab.h / 2)) < 45;
+                if (close) {
+                    btnClickCount++;
+                    playClick();
+                    if (btnClickCount >= 3) btnOn = true;
+                }
+            }
+
+            // 8. Bölümdeki platformu tutma başlangıcı
+            if (m.dragPlatform) {
+                const p = PLATFORMS[MOV_IDX];
+                if (ptIn(mx, my, p)) {
+                    dragPlatIdx = MOV_IDX;
+                    dragOffX = mx - p.x;
+                    dragOffY = my - p.y;
+                }
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            dragDoor = false; dragPlayer = false; dragPlatIdx = -1;
+        });
+
+        // Oyunun asıl motoru, her saniye fizik hesaplamalarının yapılması için
+        function update() {
+            // Yarasaların havada uçma hareketini sağlamak için
+            bgBats.forEach(bat => {
+                bat.x += bat.vx;
+                bat.y = bat.baseY + Math.sin(Date.now() * 0.002 * bat.speedMod) * 15;
+
+                if (bat.dir === 1 && bat.x > CW + 100) bat.x = -100;
+                if (bat.dir === -1 && bat.x < -100) bat.x = CW + 100;
+
+                bat.tick++;
+                if (bat.tick >= 8) {
+                    bat.tick = 0;
+                    bat.frame = (bat.frame + 1) % 4;
+                }
+            });
+
+            if (gameWon || isHintScreen || isSettingsScreen) return;
+            if (isDying) return; // Karakter ölüyorsa animasyonun bitmesini beklemek için
+
+            const m = LEVELS[level].mod; // O anki bölümün kurallarını değişkenlere atıyorum
+            const door = getDoor();
+
+            // Karakterin sağa sola gitmesini ve zıplamasını kontrol etmek için
+            if (!dragPlayer) {
+                let goLeft, goRight, wJ; // Hareket yönlerini tutan değişkenlerim
+
+                if (m.reverseCtrl) {
+                    // 3. Bölümdeki ters kontrollerin ayarlanması için
+                    // W/ArrowUp = sola, A/ArrowLeft = sağa, D/ArrowRight/Space = zıplama
+                    goLeft = keys['w'] || keys['arrowup'];
+                    goRight = keys['a'] || keys['arrowleft'];
+                    wJ = keys['d'] || keys['arrowright'];
+                } else if (m.dragPlayer) {
+                    goLeft = false; goRight = false; wJ = false;
+                } else {
+                    goLeft = keys['a'] || keys['arrowleft'];
+                    goRight = keys['d'] || keys['arrowright'];
+                    wJ = keys[' '] || keys['w'] || keys['arrowup'];
+                }
+
+                player.vx = (goLeft ? -SPD : goRight ? SPD : 0) + (m.wind ? WIND_F : 0);
+
+                // Karakterin aşağı düşmesini sağlayan yerçekimi için
+                if (player.vy > MAXFALL) player.vy = MAXFALL;
+
+                if (wJ && player.grounded && !player.jumpLock && !m.dragPlayer && jumpsLeft > 0) {
+                    player.vy = -JUMP; player.grounded = false; player.jumpLock = true; jumpsLeft--;
+                    playJump();
+                }
+                if (!wJ) player.jumpLock = false;
+            }
+
+            // Duvarlara veya platformlara yandan çarpmayı kontrol etmek için (X ekseni)
+            const prevVX = player.vx;
+            player.x += player.vx;
+
+            if (!dragPlayer) {
+                for (const p of PLATFORMS) {
+                    if (collide(player, p)) {
+                        player.x += prevVX >= 0
+                            ? p.x - (player.x + player.w)
+                            : (p.x + p.w) - player.x;
+                        player.vx = 0;
+                    }
+                }
+            }
+
+            // 9. Bölümde kapıya kafa atınca açılması için kullanılan sayaç
+            if (m.knockDoor && !isDoorOpen() && collide(player, door)) {
+                if (prevVX > 1.2 && knockTimer <= 0 && player.y + player.h > door.y + 8) {
+                    doorKnocks++;
+                    knockTimer = 45;
+                }
+                player.x = door.x - player.w;
+                player.vx = 0;
+            }
+
+            // Karakterin ekranın dışına çıkıp kaybolmasını engellemek için
+            if (player.x < 0) { player.x = 0; player.vx = 0; } // Ekranın solundan dışarı kaçmasın
+            if (player.x + player.w > CW) { player.x = CW - player.w; player.vx = 0; } // Ekranın sağından dışarı kaçmasın
+
+            // Zemine basmayı ve tavana çarpmayı kontrol etmek için (Y ekseni)
+            player.y += player.vy;
+            player.grounded = false;
+
+            if (!dragPlayer) {
+                for (const p of PLATFORMS) {
+                    if (collide(player, p)) {
+                        if (player.vy > 0) { player.y = p.y - player.h; player.grounded = true; }
+                        else { player.y = p.y + p.h; }
+                        player.vy = 0;
+                    }
+                }
+            } else {
+                // 7. Bölümde karakterin her yöne serbestçe gitmesi için kullanılan çarpışma mantığı
+                for (const p of PLATFORMS) {
+                    if (!collide(player, p)) continue;
+                    const oL = (player.x + player.w) - p.x, oR = (p.x + p.w) - player.x;
+                    const oT = (player.y + player.h) - p.y, oB = (p.y + p.h) - player.y;
+                    const mn = Math.min(oL, oR, oT, oB);
+                    if (mn === oL) player.x -= oL;
+                    else if (mn === oR) player.x += oR;
+                    else if (mn === oT) player.y -= oT;
+                    else player.y += oB;
+                }
+            }
+
+            // Dikenlere değince karakterin ölmesi için gereken döngü
+            for (const s of SPIKES) {
+                if (collide(player, s)) {
+                    if (m.fakeDoor && btnOn) nextLevel();   // L6: diken = geçiş
+                    else startDeath();                       // Ölüm animasyonu oynat
+                    return;
+                }
+            }
+
+            // Butonun üstüne basınca kapının açılması için
+            if (!m.mouseBtn && collide(player, activeBtn())) {
+                if (!btnOn) playClick();
+                btnOn = true;
+            }
+
+            if (knockTimer > 0) knockTimer--;
+
+            if (m.reverseExit) {
+                if (btnOn && collide(player, ENTRANCE)) { nextLevel(); return; }
+                if (collide(player, door)) { startDeath(); return; }
+            }
+
+            const open = isDoorOpen();
+            updateHUD();
+
+            if (!m.reverseExit && collide(player, door)) {
+                if (m.fakeDoor) { startDeath(); return; }
+                else if (m.knockDoor && !open) { /* solid */ }
+                else if (open) nextLevel();
+            }
+
+            // Karakter çok aşağı düşerse ölmesi için kontrol
+            if (player.y < -80 || player.x < -60) startDeath();
+        }
+
+        // Ekrana her şeyin çizilmesi için gereken fonksiyonlar burası
+
+        // Resimler yüklenmezse karakterin basit bir kutu olarak çizilmesi için
+        function drawPlayerPixel(px, py) {
+            ctx.fillStyle = dragPlayer ? '#ffffff' : '#eec880';
+            ctx.fillRect(px, py, player.w, player.h);
+            ctx.fillStyle = '#1a0e30';
+            ctx.fillRect(player.vx >= 0 ? px + 8 : px + 3, py + 4, 3, 3);
+            if (Math.abs(player.vx) > 0.3 && player.grounded) {
+                const s = (Date.now() / 110 | 0) % 2;
+                ctx.fillStyle = '#c0a050';
+                ctx.fillRect(px + 2, py + player.h, 4, s ? 4 : 2);
+                ctx.fillRect(px + 8, py + player.h, 4, s ? 2 : 4);
+            }
+        }
+
+        // Karakterin animasyonlarının ekrana basılması için gereken fonksiyon
+        function drawPlayer() {
+            const px = player.x | 0, py = player.y | 0;
+            updateAnim();
+
+            // Karakterin yere basıyormuş gibi durması için eklenen hafif gölge
+            if (player.grounded && !isDying) {
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(px + player.w / 2, py + player.h + 2, 9, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const cfg = ANIM.cfg[ANIM.state];
+            const sheet = IMG[cfg.sheet];
+
+            if (sheet && sheet.complete && sheet.naturalWidth) {
+                // Resim dosyasındaki karelerin yan yana dizili olması sebebiyle sütun sütun okunması için.
+                // Titreşimi engellemek için srcX değerinin frame genişliğiyle çarpılması.
+                // srcY = 0               (satır sabit)
+                const srcX = ANIM.frame * cfg.frameW;
+                const srcY = 0;
+
+                const dstX = px + ANIM.OFF_X;
+                const dstY = py + ANIM.OFF_Y;
+
+                ctx.save();
+                ctx.imageSmoothingEnabled = false;
+
+                if (ANIM.facing < 0) {
+                    // Sola giderken karakterin yüzünün o tarafa dönmesi için resmin çevrilmesi
+                    ctx.translate(dstX + ANIM.DISP_W, dstY);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(sheet,
+                        srcX, srcY, cfg.frameW, ANIM.FRAME_H,
+                        0, 0, ANIM.DISP_W, ANIM.DISP_H);
+                } else {
+                    ctx.drawImage(sheet,
+                        srcX, srcY, cfg.frameW, ANIM.FRAME_H,
+                        dstX, dstY, ANIM.DISP_W, ANIM.DISP_H);
+                }
+                ctx.restore();
+            } else {
+                drawPlayerPixel(px, py);
+            }
+        }
+
+        // Kapının resminin veya resim yoksa basit halinin çizilmesi için
+        function drawDoor(x, y, w, h, isEntry, open) {
+            if (IMG.door.complete && IMG.door.naturalWidth) {
+                ctx.save();
+                if (isEntry) {
+                    // Başlangıç kapısının ters tarafa bakması için çevrilmesi
+                    ctx.translate(x + w, y);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(IMG.door, 0, 0, w, h);
+                } else {
+                    ctx.drawImage(IMG.door, x, y, w, h);
+                }
+                ctx.restore();
+            } else {
+                // Fallback: piksel kapı
+                ctx.fillStyle = open ? '#1a4030' : (isEntry ? '#2a1840' : '#3d1525');
+                ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
+                ctx.fillStyle = open ? '#228844' : (isEntry ? '#3a2060' : '#7a1e2e');
+                ctx.fillRect(x, y, w, h);
+                ctx.fillStyle = 'rgba(0,0,0,0.38)';
+                ctx.fillRect(x + 3, y + 3, w - 6, h - 3);
+                if (!isEntry || open) {
+                    ctx.fillStyle = open ? '#88ffaa' : '#555';
+                    ctx.beginPath();
+                    ctx.arc(x + w - 7, y + h * 0.55, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Kapıyı açan butonun çizilmesi için
+        function drawButton(btn, pressed) {
+            const sheet = pressed ? IMG.btnDown : IMG.btnUp;
+            if (sheet && sheet.complete && sheet.naturalWidth) {
+                ctx.save();
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(sheet, 15, 37, 11, 7, btn.x, btn.y, btn.w, btn.h);
+                ctx.restore();
+            } else {
+                // Fallback
+                ctx.fillStyle = '#0a0510';
+                ctx.fillRect(btn.x, btn.y + btn.h - 5, btn.w, 5);
+                ctx.fillStyle = pressed ? '#5a0008' : '#8a0010';
+                ctx.fillRect(btn.x + 3, btn.y + btn.h - 13, btn.w - 6, 8);
+            }
+        }
+
+        // Yerlerin (zeminlerin) resimle kaplanarak çizilmesi için
+        function drawPlatforms() {
+            const platImg = IMG.platform && IMG.platform.complete && IMG.platform.naturalWidth ? IMG.platform : null;
+            for (const p of PLATFORMS) {
+                if (p.y < 0) continue;
+                if (platImg) {
+                    ctx.save();
+                    ctx.beginPath(); ctx.rect(p.x, p.y, p.w, p.h); ctx.clip();
+                    for (let tx = p.x; tx < p.x + p.w; tx += 64) {
+                        ctx.drawImage(platImg, 0, 500, 64, 32, tx, p.y, 64, p.h);
+                    }
+                    ctx.restore();
+                    ctx.fillStyle = 'rgba(160,150,190,0.3)';
+                    ctx.fillRect(p.x, p.y, p.w, 2);
+                } else {
+                    ctx.fillStyle = '#241840';
+                    ctx.fillRect(p.x, p.y, p.w, p.h);
+                    ctx.fillStyle = '#44306a'; ctx.fillRect(p.x, p.y, p.w, 2);
+                    ctx.fillStyle = '#14082a'; ctx.fillRect(p.x, p.y + p.h - 2, p.w, 2);
+                }
+            }
+        }
+
+        // 6. Bölümde ipucu alınca dikenlerin yeşil olması için gereken fonksiyon
+        const tintedSpikeCanvas = document.createElement('canvas');
+        tintedSpikeCanvas.width = 14; tintedSpikeCanvas.height = 16;
+        let isSpikeTinted = false;
+
+        function getGreenSpike() {
+            if (!isSpikeTinted && IMG.spike && IMG.spike.complete && IMG.spike.naturalWidth) {
+                const tcx = tintedSpikeCanvas.getContext('2d');
+                tcx.drawImage(IMG.spike, 0, 0);
+                tcx.globalCompositeOperation = 'source-atop';
+                tcx.fillStyle = 'rgba(60, 220, 80, 0.6)';
+                tcx.fillRect(0, 0, 14, 16);
+                isSpikeTinted = true;
+            }
+            return tintedSpikeCanvas;
+        }
+
+        // Dikenlerin tek tek yan yana dizilerek oluşturulması için
+        function drawSpikes(isFakeDoor, isBtnOn) {
+            const spikeReady = IMG.spike && IMG.spike.complete && IMG.spike.naturalWidth;
+            const TILE_W = 14;  // Tek spike genişliği
+            const SPIKE_H = 16;  // Tam sprite yüksekliği (squish yok)
+
+            const tintGreen = isFakeDoor && hintRevealed;
+
+            for (const s of SPIKES) {
+                const passage = isFakeDoor && isBtnOn && hintRevealed && s.up && s.x === 105;
+
+                if (spikeReady) {
+                    const count = Math.max(1, Math.floor(s.w / TILE_W));
+                    const startX = s.x + Math.floor((s.w - count * TILE_W) / 2);
+                    const drawImg = tintGreen ? getGreenSpike() : IMG.spike;
+
+                    for (let i = 0; i < count; i++) {
+                        const destX = startX + i * TILE_W;
+
+                        if (s.up) {
+                            // Yerden çıkan dikenlerin ucunu yukarı baktırıyorum
+                            const destY = s.y + s.h - SPIKE_H;
+                            ctx.drawImage(drawImg, 0, 0, TILE_W, SPIKE_H, destX, destY, TILE_W, SPIKE_H);
+                        } else {
+                            // Tavandaki dikenleri baş aşağı çevirip aşağı sarkıtıyorum
+                            ctx.save();
+                            const cy = s.y + SPIKE_H / 2;
+                            ctx.translate(destX + TILE_W / 2, cy);
+                            ctx.scale(1, -1);
+                            ctx.translate(-(destX + TILE_W / 2), -cy);
+                            ctx.drawImage(drawImg, 0, 0, TILE_W, SPIKE_H, destX, s.y, TILE_W, SPIKE_H);
+                            ctx.restore();
+                        }
+                    }
+                } else {
+                    ctx.fillStyle = passage || tintGreen ? '#33aa55' : '#9999bb';
+                    ctx.beginPath();
+                    for (let dx = 0; dx < s.w; dx += 10) {
+                        if (s.up) { ctx.moveTo(s.x + dx, s.y + s.h); ctx.lineTo(s.x + dx + 5, s.y); ctx.lineTo(s.x + dx + 10, s.y + s.h); }
+                        else { ctx.moveTo(s.x + dx, s.y); ctx.lineTo(s.x + dx + 5, s.y + s.h); ctx.lineTo(s.x + dx + 10, s.y); }
+                    }
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Her şeyin sırayla ekrana basılması için ana çizim yeri burası
+        function draw() {
+            const m = gameWon ? {} : LEVELS[level].mod; // Bölümün çizim kurallarının alınması için
+            const door = getDoor();
+            const open = gameWon ? false : isDoorOpen();
+            const ab = activeBtn();
+
+            // Arka plana mağara havası veren resmin konulması için
+            // Koyu taban (her zaman)
+            ctx.fillStyle = '#0d0a1c';
+            ctx.fillRect(0, 0, CW, CH);
+            // background.png'yi çiz
+            if (IMG.bg && IMG.bg.complete && IMG.bg.naturalWidth) {
+                // Resmin kenarlarında boşluk kalmaması için
+                ctx.drawImage(IMG.bg, 0, 0, 384, 216, 0, 0, CW, CH);
+            }
+
+            // Süs amaçlı eklenen yarasaların ekrana basılması için
+            bgBats.forEach(bat => {
+                const bImg = BAT_IMG[bat.frame];
+                if (bImg && bImg.complete && bImg.naturalWidth) {
+                    ctx.save();
+                    ctx.imageSmoothingEnabled = false;
+
+                    // Yarasaların çok parlayıp mağara havasını bozmaması için renklerin kısılması
+                    ctx.filter = 'grayscale(80%) brightness(65%)';
+
+                    const ratio = bImg.naturalHeight / bImg.naturalWidth;
+
+                    if (bat.dir === -1) {
+                        // Sola giden yarasa için görüntüyü yatayda çevir
+                        ctx.translate(bat.x + bat.scale / 2, bat.y);
+                        ctx.scale(-1, 1);
+                        ctx.translate(-(bat.x + bat.scale / 2), -bat.y);
+                    }
+
+                    ctx.drawImage(bImg, bat.x, bat.y, bat.scale, bat.scale * ratio);
+                    ctx.restore();
+                }
+            });
+
+            // 2. Bölümdeki rüzgarı belli etmek için ekrana eklenen çizgiler
+            if (m.wind) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(90,130,255,0.22)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                const t = Date.now();
+                for (let i = 0; i < 22; i++) {
+                    const rx = CW - ((t * 0.12 + i * 29) % (CW + 40));
+                    const ry = (i * 53 % CH) + Math.sin(t * 0.0008 + i) * 12;
+                    ctx.moveTo(rx, ry); ctx.lineTo(rx - 18, ry + 14);
+                }
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            //Kapılar — açık parıltı sadece hint açıksa 
+            const entranceOpen = m.reverseExit && btnOn && hintRevealed;
+            drawDoor(ENTRANCE.x, ENTRANCE.y, ENTRANCE.w, ENTRANCE.h, true, entranceOpen);
+            drawDoor(door.x, door.y, door.w, door.h, false, open && !m.reverseExit && hintRevealed);
+
+            // Platformlar 
+            drawPlatforms();
+
+            // 8. Bölümde ipucu açılırsa sürüklenebilir platformun etrafının yeşille parlatılması için
+            if (m.dragPlatform && hintRevealed) {
+                const p = PLATFORMS[MOV_IDX];
+                if (p.y >= 0) {
+                    const g = 0.35 + 0.2 * Math.sin(Date.now() * 0.004);
+                    ctx.strokeStyle = `rgba(80,255,100,${g})`;
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(p.x, p.y, p.w, p.h);
+                    if (dragPlatIdx === MOV_IDX) {
+                        ctx.fillStyle = 'rgba(80,255,100,0.12)';
+                        ctx.fillRect(p.x, p.y, p.w, p.h);
+                    }
+                }
+            }
+
+            // Dikenler 
+            drawSpikes(m.fakeDoor, btnOn);
+
+            // Buton 
+            drawButton(ab, btnOn);
+
+            // 8. Bölümdeki kalan zıplama hakkımızı köşeye yazdırıyorum
+            if (m.maxJumps) {
+                for (let i = 0; i < m.maxJumps; i++) {
+                    ctx.fillStyle = i < jumpsLeft ? '#4caf50' : '#1e1530';
+                    ctx.fillRect(8 + i * 14, 8, 10, 10);
+                }
+                ctx.fillStyle = '#81c784';
+                ctx.font = '9px "Courier New"';
+                ctx.fillText(`${jumpsLeft}/${m.maxJumps}`, 8, 28);
+            }
+
+            // 10. Bölümde butona yakınsak "TIKLA" yazısının çıkması için yapılan kontrol
+            if (m.mouseBtn && !btnOn) {
+                const ab = activeBtn();
+                const close = Math.abs(player.x + player.w / 2 - (ab.x + ab.w / 2)) < 55
+                    && Math.abs(player.y + player.h / 2 - (ab.y + ab.h / 2)) < 45;
+
+                // Görsel sprite koordinatları (34x22 boyutunda çiziliyor)
+                // (Artık butonun fiziksel sınırları ab ile görsel sınırlar birebir aynı!)
+
+                if (ptIn(mx, my, ab) && close) {
+                    ctx.strokeStyle = '#4caf50';
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeRect(ab.x - 2, ab.y - 2, ab.w + 4, ab.h + 4);
+                    ctx.fillStyle = '#4caf50';
+                    ctx.font = '9px "Courier New"';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('TIKLA', ab.x + ab.w / 2, ab.y - 4);
+                    ctx.textAlign = 'left';
+                } else if (ptIn(mx, my, ab)) {
+                    // Butona uzaksak yazı daha silik görünsün diye rengini ayarladım
+                    ctx.strokeStyle = 'rgba(255,255,100,0.25)';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(ab.x - 2, ab.y - 2, ab.w + 4, ab.h + 4);
+                }
+            }
+
+            // Oyuncu 
+            drawPlayer();
+
+            // Oyun bitti 
+            if (gameWon) {
+                ctx.fillStyle = 'rgba(10,6,20,0.78)';
+                ctx.fillRect(0, 0, CW, CH);
+            }
+        }
+
+        // Oyunun sürekli akmasını sağlayan ana döngü burası (60 FPS)
+        let lastTime = 0;
+        const fpsInterval = 1000 / 60; // Hedef 60 FPS
+
+        function gameLoop(time) {
+            requestAnimationFrame(gameLoop);
+            if (!time) time = performance.now();
+
+            const elapsed = time - lastTime;
+            if (elapsed > fpsInterval) {
+                lastTime = time - (elapsed % fpsInterval);
+                update();
+                draw();
+            }
+        }
+
+        // Her şeyin hazırlanıp oyunun başlatılması için
+        loadLevel(0);
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+
+</html>
