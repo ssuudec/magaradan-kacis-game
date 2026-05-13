@@ -8,7 +8,7 @@
 
 ## Hakkında
 
-[That Tiny Recursive Room](https://preetsr.itch.io/that-tiny-recursive-room) oyunundan esinlenilmiştir. Aynı oda, her bölümde farklı kurallarla tekrar eder.
+[That Tiny Recursive Room](https://preet-sra.itch.io/that-tiny-recursive-room) oyunundan esinlenilmiştir. Aynı oda, her bölümde farklı kurallarla tekrar eder.
 
 ## Amaç
 
