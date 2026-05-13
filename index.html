@@ -833,6 +833,7 @@
                 player.vx = (goLeft ? -SPD : goRight ? SPD : 0) + (m.wind ? WIND_F : 0);
 
                 // Karakterin aşağı düşmesini sağlayan yerçekimi için
+                player.vy += GRAV;
                 if (player.vy > MAXFALL) player.vy = MAXFALL;
 
                 if (wJ && player.grounded && !player.jumpLock && !m.dragPlayer && jumpsLeft > 0) {
