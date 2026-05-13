@@ -44,8 +44,10 @@ Tüm detaylar: [AI.md](AI.md)
 | Yarasa | [PixelSkeys - Bat Pixel Art Pack Free](https://opengameart.org/content/bat-sprite) |
 | Sesler | [Freesound](https://pixabay.com/tr/)  |
 | Diken | [Omniclause - Spikes](https://omniclause.itch.io/spikes)|
+| Platform | [Cat_Sopelka - Dungeon brick wall background](https://cat-sopelka.itch.io/dungeon-brick-wall) |
 | Buton | Kendi çizimim |
 | Hint | Gemini AI |
+
 
 
 ---
