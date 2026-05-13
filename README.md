@@ -52,5 +52,5 @@ Tüm detaylar: [AI.md](AI.md)
 
 ---
 
-**Geliştirici:** [Sude Çakmak] 
-**Hedef Oyun:** https://preetsr.itch.io/that-tiny-recursive-room
+
+
