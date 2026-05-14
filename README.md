@@ -20,6 +20,8 @@
 - **Zıpla:** Space / W / ↑
 - **Sıfırla:** R
 - **Fare:** Bölüm 7, 8, 10'da sürükleme ve tıklama
+- **Hint:** Oyun ekranında sağ üstte çıkan question mark'a tıklama 
+- **Ses Ayarları:** Ana menüde müzik ve efekt slide'ı , oyun ekranında ise sağ üstte çıkan ayarlar tuşu
 
 ## Ekran Görüntüleri
 
