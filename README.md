@@ -30,7 +30,7 @@
 
 ## Teknoloji
 
-HTML5 Canvas + Vanilla JavaScript (kütüphane yok)
+HTML5 Canvas + Vanilla JavaScript (kütüphane yok) + CSS
 
 ## AI Kullanımı
 
